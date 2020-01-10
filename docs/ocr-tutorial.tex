@@ -102,7 +102,7 @@ This tutorial is about current OCR technologies, and Niko Partanen's own practic
 
 All examples are taken from the National Library of Finland's \href{https://fennougrica.kansalliskirjasto.fi/}{Fenno-Ugrica collection}.
 
-This workshop assumes that the participants are comfortable with installing software from the source, and are used to working on command line. All examples are supposed to be complete and repeatable, and longer command chains are all collected into Chapter \ref{cheatsheet}.
+This workshop assumes that the participants are comfortable with installing software from the source, and are used to working on command line. All examples are supposed to be complete and repeatable, but this is very much ongoing work.
 
 \hypertarget{intro}{%
 \chapter{Introduction}\label{intro}}
@@ -516,6 +516,40 @@ At the moment \href{https://transkribus.eu}{Transkribus} project offers the best
 
 One example of how collections edited in Transkribus can be made available can be seen in this interface for \href{https://transkribus.eu/r/kansallisarkisto/}{National Archives of Finland}'s data.
 
+\begin{figure}
+\centering
+\includegraphics{images/transkribus_castren.jpg}
+\caption{Example from Castrén's Swedish}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics{images/transkribus_castren_model.jpg}
+\caption{Castrén's currently best model}
+\end{figure}
+
+Experiments on Finnish dialectal transcription have also been very promising.
+
+\begin{figure}
+\centering
+\includegraphics{images/transkribus_skn.jpg}
+\caption{Eeva Yli-Luukko's transcription (© Institute for the Languages of Finland}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics{images/transkribus_skn_model.jpg}
+\caption{Best Finnish dialect transcription model}
+\end{figure}
+
+There is also an extremely well done \href{https://transkribus.eu/r/read/library/}{online editing interface}.
+
+\begin{figure}
+\centering
+\includegraphics{images/transkribus_interface.jpg}
+\caption{Transkribus online interface}
+\end{figure}
+
 \hypertarget{using-models}{%
 \chapter{Using OCR models}\label{using-models}}
 
@@ -524,16 +558,127 @@ In this section we go through with practical examples how OCR models can be used
 \hypertarget{using-tesseract}{%
 \section{Using Tesseract}\label{using-tesseract}}
 
-Tesseract\ldots{}
+Tesseract can be used as:
 
-R bindings\ldots{}
+\begin{verbatim}
+tesseract image.jpg image -l kpv alto
+\end{verbatim}
 
-Python bindings\ldots{}
+This works when we have language model called \texttt{kpv} in so-called Tessdata directory. Directory can also be specified as an argument. To get XML output, one can have \texttt{alto} or \texttt{hocr} in the end of the command.
+
+R has \href{https://docs.ropensci.org/tesseract/}{Tesseract bindings} that work well.
+
+\href{https://pypi.org/project/pytesseract/}{Pytesseract} is a good option for Python. I had some problems while using different language models on it, but for layout analysis it was really convenient.
 
 \hypertarget{using-calamari}{%
 \section{Using Calamari}\label{using-calamari}}
 
-Calamari\ldots{}
+Calamari can be used from command line, so that it is given the model and location of line images.
+
+\begin{verbatim}
+calamari-predict --checkpoint path_to_model.ckpt --files your_images.*.png
+\end{verbatim}
+
+It can also be used directly from Python.
+
+\begin{verbatim}
+from calamari_ocr.ocr import Predictor, create_dataset, DataSetType, DataSetMode
+import tensorflow as tf
+
+predictor = Predictor('./models/komi-latin-bin00004500.ckpt')
+
+for prediction in predictor.predict_raw(images = line_list, progress_bar=False):
+    print(prediction.sentence)
+\end{verbatim}
+
+More complete example could look like this:
+
+\begin{verbatim}
+
+def read_alto(alto_file, version = 2):
+    
+    tree = ET.parse(alto_file)
+    root = tree.getroot()
+
+    xmlns = {'alto': '{http://www.loc.gov/standards/alto/ns-v' + str(version) + '#}'}
+    
+    data = []
+
+    unit = root.find('.//{alto}MeasurementUnit'.format(**xmlns)).text
+
+    max_height = root.find('.//{alto}PrintSpace'.format(**xmlns)).get('HEIGHT')
+    max_width = root.find('.//{alto}PrintSpace'.format(**xmlns)).get('WIDTH')
+
+    for block in root.iterfind('.//{alto}TextBlock'.format(**xmlns)):
+        
+        block_id = block.get('ID')
+
+        for line in block.iterfind('.//{alto}TextLine'.format(**xmlns)):
+
+            content = {}
+
+            content["block_id"] = block_id
+            content["height"] = line.get('HEIGHT')
+            content["width"] = line.get('WIDTH')
+            content["top"] = line.get('VPOS')
+            content["left"] = line.get('HPOS')
+            content["unit"] = unit
+            content["max_height"] = max_height
+            content["max_width"] = max_width
+
+            line_strings = []
+            for string in line.findall('./{alto}String'.format(**xmlns)):
+                line_strings.append(string.get('CONTENT'))
+            content["text"] = ' '.join(line_strings)
+            
+            data.append(content)
+        
+    return(data)
+
+def extract_line_array(pil_image, height, width, top, left):
+
+    cropped_example = pil_image.crop((int(left), int(top), int(left) + int(width), int(top) + int(height)))
+
+    cropped_example_bw = cropped_example.convert("L")
+    
+    image_array = numpy.array(cropped_example_bw)
+
+    image_array_binarized = binarize_array(image_array, 150)
+
+    #image_array_binarized = Binarizer(image_array, threshold = 150, copy=False)
+    
+    return(image_array_binarized)
+
+def predict_page(page_image, alto, predictor):
+    
+    alto_content = read_alto(alto)
+    
+    pil_image = Image.open(page_image)
+    
+    line_list = []
+
+    for line in alto_content:
+        extracted_line = extract_line_array(pil_image, line['height'], line['width'], line['top'], line['left'])
+        line_list.append(extracted_line)
+    
+    pred_list = []
+    
+    for prediction in predictor.predict_raw(images = line_list, progress_bar=False):
+
+        pred_list.append(prediction)
+        
+    return(pred_list)
+\end{verbatim}
+
+Calamari returns very nicely list of confidences for each character. This info can be used, for example, to distinguish areas where the model is most confident, which seems to indicate correct script.
+
+\begin{figure}
+\centering
+\includegraphics{images/calamari_script_detector.jpg}
+\caption{Calamari used in script detection}
+\end{figure}
+
+The model used here was quite horribly bad, but still good enough for this.
 
 \bibliography{book.bib,packages.bib,bibtex/FRibliography.bib}
 
