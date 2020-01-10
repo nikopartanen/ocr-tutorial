@@ -111,7 +111,7 @@ This workshop will be built around the materials presented by \citet{partanen201
 
 \begin{figure}
 \centering
-\includegraphics{images/doctor_sel.png}
+\includegraphics[width=0.4\textwidth,height=\textheight]{images/doctor_sel.png}
 \caption{Example from a book in Selkup}
 \end{figure}
 
@@ -157,7 +157,15 @@ Indeed, as the OCR model training does not care about anything beyond an individ
 
 When we use the OCR model, see section \href{./doing-ocr}{Doing OCR}, it is necessary that the lines we get from the line segmentation tool we use are similar to the lines we did the model training with. Thereby it is important to think about the whole pipeline before getting too far.
 
-In my experience the Tesseract's layout analysis tool is very good, and often gives a very sensible result. Also Transkribus has some excellent layout detection capabilities. So running the layout detection in these programs, and extracting the line bounding boxes from the XML returned is a good option. In section \href{./doing-ocr}{Doing OCR} I also have an example of how to run the whole pipeline in Python.
+In my experience the Tesseract's layout analysis tool is very good, and often gives a very sensible result. Also Transkribus has some excellent layout detection capabilities. So running the layout detection in these programs, and extracting the line bounding boxes from the XML returned is a good option.
+
+Layout detection works on many levels, so different elements we can retrieve are text areas, figure areas, line bounding boxes etc.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.6\textwidth,height=\textheight]{images/calamari_script_detector.jpg}
+\caption{Example from Russian - Permian Komi newspaper's layout}
+\end{figure}
 
 \hypertarget{ground-truth}{%
 \chapter{Ground Truth creation}\label{ground-truth}}
@@ -201,7 +209,7 @@ ocropus-gpageseg ./example/batch_1/*.bin.png
 
 \begin{figure}
 \centering
-\includegraphics{./images/ocropy_segmented_lines.jpg}
+\includegraphics[width=0.8\textwidth,height=\textheight]{./images/ocropy_segmented_lines.jpg}
 \caption{Segmented lines}
 \end{figure}
 
@@ -221,7 +229,7 @@ This outputs an HTML file:
 
 \begin{figure}
 \centering
-\includegraphics{./images/ocropy_empty_html.jpg}
+\includegraphics[width=0.5\textwidth,height=\textheight]{./images/ocropy_empty_html.jpg}
 \caption{Empty HTML from Ocropy (\textbf{has to be edited in Firefox})}
 \end{figure}
 
@@ -252,7 +260,7 @@ INFO:  ./example/batch_1/0001/01000d.bin.png:sistamьꜧ oleꜧt. Ꞩemen paŋk�
 
 These lines are saved with the images.
 
-\includegraphics{./images/ocropy_export_from_html.jpg}
+\includegraphics[width=0.7\textwidth,height=\textheight]{./images/ocropy_export_from_html.jpg}
 
 If we edit the HTML, and the save the file, the edited lines can be saved. This happens with:
 
@@ -262,7 +270,7 @@ ocropus-gtedit extract -O ./example/batch_1.html
 
 This saves the edited lines with extension \texttt{.gt.txt}.
 
-\includegraphics{./images/ocropy_export_gt.jpg}
+\includegraphics[width=0.7\textwidth,height=\textheight]{./images/ocropy_export_gt.jpg}
 
 In this point we can do:
 
@@ -496,6 +504,14 @@ The remaining but hidden errors make up 69.81%
 
 Error rate of 24.43\% means that every fourth character needs to be fixed, but that is already much better than what we had in the beginning.
 
+In an earlier paper we demonstrated that the improvements will happen very fast.
+
+\begin{figure}
+\centering
+\includegraphics{images/ocropy_training_scores.jpg}
+\caption{Figure 4 from \citet{partanen2019ocr}}
+\end{figure}
+
 \hypertarget{training-tesseract}{%
 \section{Training Tesseract}\label{training-tesseract}}
 
@@ -518,13 +534,13 @@ One example of how collections edited in Transkribus can be made available can b
 
 \begin{figure}
 \centering
-\includegraphics{images/transkribus_castren.jpg}
+\includegraphics[width=0.7\textwidth,height=\textheight]{images/transkribus_castren.jpg}
 \caption{Example from Castrén's Swedish}
 \end{figure}
 
 \begin{figure}
 \centering
-\includegraphics{images/transkribus_castren_model.jpg}
+\includegraphics[width=0.5\textwidth,height=\textheight]{images/transkribus_castren_model.jpg}
 \caption{Castrén's currently best model}
 \end{figure}
 
@@ -538,8 +554,8 @@ Experiments on Finnish dialectal transcription have also been very promising.
 
 \begin{figure}
 \centering
-\includegraphics{images/transkribus_skn_model.jpg}
-\caption{Best Finnish dialect transcription model}
+\includegraphics[width=0.5\textwidth,height=\textheight]{images/transkribus_skn_model.jpg}
+\caption{Currently Finnish dialect transcription model}
 \end{figure}
 
 There is also an extremely well done \href{https://transkribus.eu/r/read/library/}{online editing interface}.
@@ -674,7 +690,7 @@ Calamari returns very nicely list of confidences for each character. This info c
 
 \begin{figure}
 \centering
-\includegraphics{images/calamari_script_detector.jpg}
+\includegraphics[width=0.6\textwidth,height=\textheight]{images/calamari_script_detector.jpg}
 \caption{Calamari used in script detection}
 \end{figure}
 

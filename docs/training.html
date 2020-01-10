@@ -250,6 +250,11 @@ GT       PRED     COUNT    PERCENT
 {c}      {o}            73      1.31%
 The remaining but hidden errors make up 69.81%</code></pre>
 <p>Error rate of 24.43% means that every fourth character needs to be fixed, but that is already much better than what we had in the beginning.</p>
+<p>In an earlier paper we demonstrated that the improvements will happen very fast.</p>
+<div class="figure">
+<img src="images/ocropy_training_scores.jpg" alt="Figure 4 from Partanen and Rießler (2019)" />
+<p class="caption">Figure 4 from <span class="citation">Partanen and Rießler (<a href="#ref-partanen2019ocr">2019</a>)</span></p>
+</div>
 </div>
 <div id="training-tesseract" class="section level2">
 <h2><span class="header-section-number">6.2</span> Training Tesseract</h2>
@@ -258,6 +263,12 @@ The remaining but hidden errors make up 69.81%</code></pre>
 <p>If you want to change the parameters, play around with the Makefile.</p>
 <p>This gives a very good Tesseract model if you have enough data. The models, to be foundable for Tesseract, have to be in so called tessdata directory. This can be also specified when using Tesseract by specifying <code>--tessdata-dir</code>.</p>
 
+</div>
+</div>
+<h3>References</h3>
+<div id="refs" class="references">
+<div id="ref-partanen2019ocr">
+<p>Partanen, Niko, and Michael Rießler. 2019. “An Ocr System for the Unified Northern Alphabet.” In <em>Proceedings of the Fifth International Workshop on Computational Linguistics for Uralic Languages</em>, 77–89.</p>
 </div>
 </div>
             </section>

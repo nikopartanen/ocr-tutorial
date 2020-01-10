@@ -111,7 +111,12 @@
 <p>Of course the argument can also be made that for variety of purposes it is not even crucial to have the lines and sections connect to one another perfectly. This could be the case, for example, in topic detection tasks etc. It is important not to fall into trap where we think that as something doesn’t work perfectly we cannot use it.</p>
 <p>Indeed, as the OCR model training does not care about anything beyond an individual line, it is not of any importance there how the lines connect to one another and whether the texts are complete.</p>
 <p>When we use the OCR model, see section <a href="./doing-ocr">Doing OCR</a>, it is necessary that the lines we get from the line segmentation tool we use are similar to the lines we did the model training with. Thereby it is important to think about the whole pipeline before getting too far.</p>
-<p>In my experience the Tesseract’s layout analysis tool is very good, and often gives a very sensible result. Also Transkribus has some excellent layout detection capabilities. So running the layout detection in these programs, and extracting the line bounding boxes from the XML returned is a good option. In section <a href="./doing-ocr">Doing OCR</a> I also have an example of how to run the whole pipeline in Python.</p>
+<p>In my experience the Tesseract’s layout analysis tool is very good, and often gives a very sensible result. Also Transkribus has some excellent layout detection capabilities. So running the layout detection in these programs, and extracting the line bounding boxes from the XML returned is a good option.</p>
+<p>Layout detection works on many levels, so different elements we can retrieve are text areas, figure areas, line bounding boxes etc.</p>
+<div class="figure">
+<img src="images/calamari_script_detector.jpg" alt="Example from Russian - Permian Komi newspaper’s layout" style="width:60.0%" />
+<p class="caption">Example from Russian - Permian Komi newspaper’s layout</p>
+</div>
 
 </div>
             </section>

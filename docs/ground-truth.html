@@ -126,7 +126,7 @@
 <p>This tool can be used to create segmented lines. The system stores somehow information about the line locations, but moving the files around is apparently not a good idea.</p>
 <pre><code>ocropus-gpageseg ./example/batch_1/*.bin.png</code></pre>
 <div class="figure">
-<img src="images/ocropy_segmented_lines.jpg" alt="Segmented lines" />
+<img src="images/ocropy_segmented_lines.jpg" alt="Segmented lines" style="width:80.0%" />
 <p class="caption">Segmented lines</p>
 </div>
 <p>Now, let’s pretend we are without any OCR system for this script. Then we would need to add start writing from the scratch. This could be started with the following command:</p>
@@ -137,7 +137,7 @@
 <p class="caption">HTML file appears</p>
 </div>
 <div class="figure">
-<img src="images/ocropy_empty_html.jpg" alt="Empty HTML from Ocropy (has to be edited in Firefox)" />
+<img src="images/ocropy_empty_html.jpg" alt="Empty HTML from Ocropy (has to be edited in Firefox)" style="width:50.0%" />
 <p class="caption">Empty HTML from Ocropy (<strong>has to be edited in Firefox</strong>)</p>
 </div>
 <p>However, as we have a model from an earlier work, let’s use it for now.</p>
@@ -158,11 +158,11 @@ INFO:  ./example/batch_1/0001/01000c.bin.png:Ꞩemen skolan johtьs. Skolat ņav
 INFO:  ./example/batch_1/0001/010011.bin.png:hurataves. Puŋkane luvtuŋkve haņꞩulaves.
 INFO:  ./example/batch_1/0001/01000d.bin.png:sistamьꜧ oleꜧt. Ꞩemen paŋkьŋьꜧ johtьs.</code></pre>
 <p>These lines are saved with the images.</p>
-<p><img src="images/ocropy_export_from_html.jpg" /></p>
+<p><img src="images/ocropy_export_from_html.jpg" style="width:70.0%" /></p>
 <p>If we edit the HTML, and the save the file, the edited lines can be saved. This happens with:</p>
 <pre><code>ocropus-gtedit extract -O ./example/batch_1.html</code></pre>
 <p>This saves the edited lines with extension <code>.gt.txt</code>.</p>
-<p><img src="images/ocropy_export_gt.jpg" /></p>
+<p><img src="images/ocropy_export_gt.jpg" style="width:70.0%" /></p>
 <p>In this point we can do:</p>
 <pre><code>cat example/batch_1/**/*gt.txt | wc -l
 &gt; 48</code></pre>
