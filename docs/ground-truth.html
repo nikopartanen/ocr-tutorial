@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Chapter 5 Ground Truth creation | OCR Tutorial</title>
+  <meta name="description" content="OCR-tutorial by Niko Partanen. Given during IWCLUL conference, Vienna 2020." />
+  <meta name="generator" content="bookdown 0.11 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="Chapter 5 Ground Truth creation | OCR Tutorial" />
+  <meta property="og:type" content="book" />
+  
+  
+  <meta property="og:description" content="OCR-tutorial by Niko Partanen. Given during IWCLUL conference, Vienna 2020." />
+  
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Chapter 5 Ground Truth creation | OCR Tutorial" />
+  
+  <meta name="twitter:description" content="OCR-tutorial by Niko Partanen. Given during IWCLUL conference, Vienna 2020." />
+  
+
+<meta name="author" content="Niko Partanen" />
+
+
+<meta name="date" content="2020-01-10" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="layout.html">
+<link rel="next" href="training.html">
+<script src="libs/jquery-2.2.3/jquery.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">OCR tutorial</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="1" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i><b>1</b> Prerequisites</a></li>
+<li class="chapter" data-level="2" data-path="intro.html"><a href="intro.html"><i class="fa fa-check"></i><b>2</b> Introduction</a></li>
+<li class="chapter" data-level="3" data-path="tools.html"><a href="tools.html"><i class="fa fa-check"></i><b>3</b> Tools</a></li>
+<li class="chapter" data-level="4" data-path="layout.html"><a href="layout.html"><i class="fa fa-check"></i><b>4</b> Layout analysis</a></li>
+<li class="chapter" data-level="5" data-path="ground-truth.html"><a href="ground-truth.html"><i class="fa fa-check"></i><b>5</b> Ground Truth creation</a><ul>
+<li class="chapter" data-level="5.1" data-path="ground-truth.html"><a href="ground-truth.html#examples"><i class="fa fa-check"></i><b>5.1</b> Examples</a></li>
+<li class="chapter" data-level="5.2" data-path="ground-truth.html"><a href="ground-truth.html#summary"><i class="fa fa-check"></i><b>5.2</b> Summary</a></li>
+</ul></li>
+<li class="chapter" data-level="6" data-path="training.html"><a href="training.html"><i class="fa fa-check"></i><b>6</b> OCR Model training</a><ul>
+<li class="chapter" data-level="6.1" data-path="training.html"><a href="training.html#training-calamari"><i class="fa fa-check"></i><b>6.1</b> Training Calamari</a></li>
+<li class="chapter" data-level="6.2" data-path="training.html"><a href="training.html#training-tesseract"><i class="fa fa-check"></i><b>6.2</b> Training Tesseract</a></li>
+</ul></li>
+<li class="chapter" data-level="7" data-path="htr.html"><a href="htr.html"><i class="fa fa-check"></i><b>7</b> Handwritten text recognition</a></li>
+<li class="chapter" data-level="8" data-path="using-models.html"><a href="using-models.html"><i class="fa fa-check"></i><b>8</b> Using OCR models</a><ul>
+<li class="chapter" data-level="8.1" data-path="using-models.html"><a href="using-models.html#using-tesseract"><i class="fa fa-check"></i><b>8.1</b> Using Tesseract</a></li>
+<li class="chapter" data-level="8.2" data-path="using-models.html"><a href="using-models.html#using-calamari"><i class="fa fa-check"></i><b>8.2</b> Using Calamari</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
+<li class="divider"></li>
+<li><a href="https://github.com/rstudio/bookdown" target="blank">Published with bookdown</a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">OCR Tutorial</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="ground-truth" class="section level1">
+<h1><span class="header-section-number">Chapter 5</span> Ground Truth creation</h1>
+<p>The main challenge in creating Ground Truth is that we need a comfortable environment for doing the proofreading, with safety that we know the software used will save the edited file back without any structural changes.</p>
+<p>Lots of programmers have got the idea to build their own proofreading environment. In practice this is very complicated. Tools that allow editing beyond individual lines usually break something in the XML structure.</p>
+<p>In principle proofreading tools / environment can be extremely simple, and this is illustrated by Ocropy in the next section.</p>
+<div id="examples" class="section level2">
+<h2><span class="header-section-number">5.1</span> Examples</h2>
+<p>We have training data in folders <code>data/batch_1_orig</code>, <code>data/batch_2_orig</code>, <code>data/batch_3_orig</code>, <code>data/batch_4_orig</code>, <code>data/batch_5_orig</code> and <code>data/batch_6_orig</code>. Each batch has 2 pages.</p>
+<p>We are using Ocropy in this section, so please install Ocropy.</p>
+<p>This is the starting position:</p>
+<div class="figure">
+<img src="images/ocropy_starting_point.jpg" alt="Just scanned images" />
+<p class="caption">Just scanned images</p>
+</div>
+<pre><code>ocropus-nlbin ./example/batch_1_orig/*.png -o ./example/batch_1</code></pre>
+<div class="figure">
+<img src="images/ocropy_binarized_pages.jpg" alt="Binarized pages" />
+<p class="caption">Binarized pages</p>
+</div>
+<p>This tool can be used to create segmented lines. The system stores somehow information about the line locations, but moving the files around is apparently not a good idea.</p>
+<pre><code>ocropus-gpageseg ./example/batch_1/*.bin.png</code></pre>
+<div class="figure">
+<img src="images/ocropy_segmented_lines.jpg" alt="Segmented lines" />
+<p class="caption">Segmented lines</p>
+</div>
+<p>Now, let’s pretend we are without any OCR system for this script. Then we would need to add start writing from the scratch. This could be started with the following command:</p>
+<pre><code>ocropus-gtedit html ./example/batch_1/*/*.png -o ./example/batch_1.html</code></pre>
+<p>This outputs an HTML file:</p>
+<div class="figure">
+<img src="images/ocropy_created_html.jpg" alt="HTML file appears" />
+<p class="caption">HTML file appears</p>
+</div>
+<div class="figure">
+<img src="images/ocropy_empty_html.jpg" alt="Empty HTML from Ocropy (has to be edited in Firefox)" />
+<p class="caption">Empty HTML from Ocropy (<strong>has to be edited in Firefox</strong>)</p>
+</div>
+<p>However, as we have a model from an earlier work, let’s use it for now.</p>
+<pre><code>ocropus-rpred -Q 4 -m ../unified-northern-alphabet-ocr/models/ocropy/mixed_model.pyrnn.gz ./example/batch_1/*/*.bin.png</code></pre>
+<p>As we already see from output, the result is sensible:</p>
+<pre><code>INFO:  ./example/batch_1/0001/010003.bin.png:Mikol skolat humus ols.
+INFO:  ./example/batch_1/0001/010007.bin.png:lavs:
+INFO:  ./example/batch_1/0001/010004.bin.png:Skolat ņavram sav oli. Ta savit ņavram,
+INFO:  ./example/batch_1/0001/010008.bin.png:- Ja! tьꜧ-unten
+INFO:  ./example/batch_1/0001/010006.bin.png:varuŋkve eri, at vaꜧte. Uļakꞩi, tau nupьl
+INFO:  ./example/batch_1/0001/010009.bin.png:tuŋkve patev.
+INFO:  ./example/batch_1/0001/010005.bin.png:Mikol at sunsьꜧlas. Mikol nas ļuli, manьr
+INFO:  ./example/batch_1/0001/01000b.bin.png:Sistamьꜧ olen.
+INFO:  ./example/batch_1/0001/01000a.bin.png:Mikol, haniꞩtah-
+INFO:  ./example/batch_1/0001/01000f.bin.png:- Ꞩemen luvtuŋkve eri.
+INFO:  ./example/batch_1/0001/01000e.bin.png:Haniꞩtan hum lavs:
+INFO:  ./example/batch_1/0001/01000c.bin.png:Ꞩemen skolan johtьs. Skolat ņavramьt
+INFO:  ./example/batch_1/0001/010011.bin.png:hurataves. Puŋkane luvtuŋkve haņꞩulaves.
+INFO:  ./example/batch_1/0001/01000d.bin.png:sistamьꜧ oleꜧt. Ꞩemen paŋkьŋьꜧ johtьs.</code></pre>
+<p>These lines are saved with the images.</p>
+<p><img src="images/ocropy_export_from_html.jpg" /></p>
+<p>If we edit the HTML, and the save the file, the edited lines can be saved. This happens with:</p>
+<pre><code>ocropus-gtedit extract -O ./example/batch_1.html</code></pre>
+<p>This saves the edited lines with extension <code>.gt.txt</code>.</p>
+<p><img src="images/ocropy_export_gt.jpg" /></p>
+<p>In this point we can do:</p>
+<pre><code>cat example/batch_1/**/*gt.txt | wc -l
+&gt; 48</code></pre>
+<p>More than enough! Let’s go onward!</p>
+</div>
+<div id="summary" class="section level2">
+<h2><span class="header-section-number">5.2</span> Summary</h2>
+<ul>
+<li><code>.txt</code> files are collected to the HTML</li>
+<li>Proofread lines are exported from HTML</li>
+<li>The wanted outcome is pairs of <code>.bin.png</code> and <code>.gt.txt</code> files</li>
+<li>These can be used when training the models</li>
+</ul>
+<p>The idea is that you go now to section @ref(training} about model training, train the first model with what we have, and then the workflow described here is applied to <code>batch_2</code>.</p>
+
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="layout.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="training.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/lunr.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": false,
+"facebook": true,
+"twitter": true,
+"google": false,
+"linkedin": false,
+"weibo": false,
+"instapaper": false,
+"vk": false,
+"all": ["facebook", "google", "twitter", "linkedin", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": null,
+"text": null
+},
+"history": {
+"link": null,
+"text": null
+},
+"download": ["ocr-tutorial.pdf", "ocr-tutorial.epub"],
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+</body>
+
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Chapter 6 OCR Model training | OCR Tutorial</title>
+  <meta name="description" content="This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook." />
+  <meta name="generator" content="bookdown 0.11 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="Chapter 6 OCR Model training | OCR Tutorial" />
+  <meta property="og:type" content="book" />
+  
+  
+  <meta property="og:description" content="This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook." />
+  
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Chapter 6 OCR Model training | OCR Tutorial" />
+  
+  <meta name="twitter:description" content="This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook." />
+  
+
+<meta name="author" content="Niko Partanen" />
+
+
+<meta name="date" content="2020-01-08" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="ground-truth.html">
+<link rel="next" href="htr.html">
+<script src="libs/jquery-2.2.3/jquery.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">A Minimal Book Example</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="1" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i><b>1</b> Prerequisites</a></li>
+<li class="chapter" data-level="2" data-path="intro.html"><a href="intro.html"><i class="fa fa-check"></i><b>2</b> Introduction</a></li>
+<li class="chapter" data-level="3" data-path="tools.html"><a href="tools.html"><i class="fa fa-check"></i><b>3</b> Tools</a></li>
+<li class="chapter" data-level="4" data-path="layout.html"><a href="layout.html"><i class="fa fa-check"></i><b>4</b> Layout analysis</a></li>
+<li class="chapter" data-level="5" data-path="ground-truth.html"><a href="ground-truth.html"><i class="fa fa-check"></i><b>5</b> Ground Truth creation</a><ul>
+<li class="chapter" data-level="5.1" data-path="ground-truth.html"><a href="ground-truth.html#examples"><i class="fa fa-check"></i><b>5.1</b> Examples</a></li>
+<li class="chapter" data-level="5.2" data-path="ground-truth.html"><a href="ground-truth.html#summary"><i class="fa fa-check"></i><b>5.2</b> Summary</a></li>
+</ul></li>
+<li class="chapter" data-level="6" data-path="training.html"><a href="training.html"><i class="fa fa-check"></i><b>6</b> OCR Model training</a><ul>
+<li class="chapter" data-level="6.1" data-path="training.html"><a href="training.html#training-calamari"><i class="fa fa-check"></i><b>6.1</b> Training Calamari</a></li>
+<li class="chapter" data-level="6.2" data-path="training.html"><a href="training.html#training-tesseract"><i class="fa fa-check"></i><b>6.2</b> Training Tesseract</a></li>
+</ul></li>
+<li class="chapter" data-level="7" data-path="htr.html"><a href="htr.html"><i class="fa fa-check"></i><b>7</b> Handwritten text recognition</a></li>
+<li class="chapter" data-level="8" data-path="using-models.html"><a href="using-models.html"><i class="fa fa-check"></i><b>8</b> Using OCR models</a><ul>
+<li class="chapter" data-level="8.1" data-path="using-models.html"><a href="using-models.html#using-tesseract"><i class="fa fa-check"></i><b>8.1</b> Using Tesseract</a></li>
+<li class="chapter" data-level="8.2" data-path="using-models.html"><a href="using-models.html#using-calamari"><i class="fa fa-check"></i><b>8.2</b> Using Calamari</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
+<li class="chapter" data-level="9" data-path="cheatsheet.html"><a href="cheatsheet.html"><i class="fa fa-check"></i><b>9</b> Cheat-sheet</a></li>
+<li class="divider"></li>
+<li><a href="https://github.com/rstudio/bookdown" target="blank">Published with bookdown</a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">OCR Tutorial</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="training" class="section level1">
+<h1><span class="header-section-number">Chapter 6</span> OCR Model training</h1>
+<p>Once we have a ground truth dataset, we can start the model training.
+Most of the time this is relatively simple process, and we just run the training command and tell it where the training files are, and how we want to name the model. The system we use takes care of image preprocessing, which will then be applied also when the model is used.</p>
+<p>There are few things we usually should keep in mind while training the model:</p>
+<ul>
+<li>Documenting which training files are used
+<ul>
+<li>Use Git commit hash in model name?</li>
+</ul></li>
+<li>Checkpoint frequency
+<ul>
+<li>Too high eats your harddisk space</li>
+<li>Too low is maybe difficult to monitor</li>
+<li>As the model accuracy can go up and down pretty wildly, it is important to notice when it is in the period of confusion, and use the model before or after that</li>
+</ul></li>
+<li>If you have lots of data (10,000–100,000 lines), then let it train for as long as you can
+<ul>
+<li>Same if you want to release something more publicly</li>
+<li><strong>Hot take:</strong> With small amount of data nothing significant happens after first few hours. If you are in Ground Truth creation loop, iterating the new models fast is a good idea.</li>
+</ul></li>
+</ul>
+<div id="training-calamari" class="section level2">
+<h2><span class="header-section-number">6.1</span> Training Calamari</h2>
+<p>First, install <a href="https://github.com/Calamari-OCR/calamari">Calamari</a>, something like:</p>
+<pre><code>pip install calamari_ocr
+pip install tensorflow </code></pre>
+<p>Or:</p>
+<pre><code>git clone https://github.com/Calamari-OCR/calamari
+conda env create -f environment_master_cpu.yml</code></pre>
+<p>Calamari model can be trained with a following command:</p>
+<pre><code>calamari-train --files train/*png --output_model_prefix komi-test- --output_dir models/ --checkpoint_frequency 200</code></pre>
+<p>This would save the model into path <code>models/komi-test-000200...</code>. New model would be saved every 200 training steps. The models can be fairly large.</p>
+<p>With our demo dataset there is the problem that Ocropy and Calamari prefer bit different filenames, so that Calamari doesn’t want <code>.bin.png</code> ending. So let’s collect the files we have into one folder, that is a nice practice anyway. I often do it with Bash like this:</p>
+<pre><code>mkdir train
+
+for gt_line in `ls ./example/*/*/*gt.txt`
+
+do
+
+  bin_png=$(echo $gt_line | sed &#39;s/gt.txt/bin.png/g&#39;)
+  png=$(echo $gt_line | sed &#39;s/gt.txt/png/g&#39;)
+
+  cp $gt_line ./train/&quot;${gt_line##*/}&quot;
+  cp $bin_png ./train/&quot;${png##*/}&quot;
+
+done</code></pre>
+<p>So we just find all Ground Truth lines, and rename + copy them into directory <code>train</code>. We could, in this point, split it into <code>train</code> and <code>test</code>, but as the data is less than 50 lines, this is maybe a bit early. It is a good idea to use tools like SciKit Learn’s <code>train_test_split</code> in Python, but in this point it isn’t that complicated what we are doing.</p>
+<p>In the case of our demo dataset, the command would be:</p>
+<pre><code>calamari-train --files train/*png --output_model_prefix una-batch_1- --output_dir models/ --checkpoint_frequency 200
+
+&gt; Resolving input files
+&gt; Found 26 files in the dataset
+&gt; Preloading dataset type DataSetMode.TRAIN with size 26
+&gt; Preloading data: 100%|█████████████████████████████████████████████████████████████████████████████████████| 26/26 [00:03&lt;00:00,  8.43it/s]
+&gt; Computing codec: 100%|██████████████████████████████████████████████████████████████████████████████████| 26/26 [00:00&lt;00:00, 21382.73it/s]
+&gt; CODEC: [&#39;&#39;, &#39; &#39;, &#39;!&#39;, &#39;,&#39;, &#39;-&#39;, &#39;.&#39;, &#39;:&#39;, &#39;A&#39;, &#39;H&#39;, &#39;M&#39;, &#39;O&#39;, &#39;P&#39;, &#39;S&#39;, &#39;T&#39;, &#39;U&#39;, &#39;a&#39;, &#39;e&#39;, &#39;g&#39;, &#39;h&#39;, &#39;i&#39;, &#39;j&#39;, &#39;k&#39;, &#39;l&#39;, &#39;m&#39;, &#39;n&#39;, &#39;o&#39;, &#39;p&#39;, &#39;r&#39;, &#39;s&#39;, &#39;t&#39;, &#39;u&#39;, &#39;v&#39;, &#39;ļ&#39;, &#39;Ņ&#39;, &#39;ņ&#39;, &#39;ŋ&#39;, &#39;ţ&#39;, &#39;в&#39;, &#39;ь&#39;, &#39;ꜧ&#39;, &#39;Ꞩ&#39;, &#39;ꞩ&#39;]
+</code></pre>
+<p>Then the training starts, and what we get it something like:</p>
+<pre><code>#00000100: loss=103.64814411 ler=1.00000000 dt=1.01209140s
+  PRED: &#39;*,&#39;
+  TRUE: &#39;*Ņavramьt tot joŋhesьt. Uļakꞩi lavs:,&#39;
+Storing checkpoint to &#39;/Users/niko/github/ocr-tutorial/data/models/una-batch_1-00000200.ckpt&#39;
+#00000200: loss=88.01333866 ler=1.00000000 dt=1.13691821s
+  PRED: &#39;*,&#39;
+  TRUE: &#39;*Ņavramьt tot joŋhesьt. Uļakꞩi lavs:,&#39;
+#00000300: loss=84.42394615 ler=1.00000000 dt=12.90764643s
+  PRED: &#39;*,&#39;
+  TRUE: &#39;*vos ols.,&#39;
+Storing checkpoint to &#39;/Users/niko/github/ocr-tutorial/data/models/una-batch_1-00000400.ckpt&#39;
+#00000400: loss=66.31870094 ler=0.88571429 dt=2.39815145s
+  PRED: &#39;*pьl ,ꜧьl jteꜧь.,&#39;
+  TRUE: &#39;*tau nupьl lavs, aꜧmьl jemteꜧьn. Ok-,&#39;
+#00000500: loss=33.71355089 ler=0.78357143 dt=0.87875572s
+  PRED: &#39;*aki kee upьl las,&#39;
+  TRUE: &#39;*Uļakꞩi Ꞩemen nupьl lavs:,&#39;
+Storing checkpoint to &#39;/Users/niko/github/ocr-tutorial/data/models/una-batch_1-00000600.ckpt&#39;
+#00000600: loss=17.30537902 ler=0.68943453 dt=0.98521040s
+  PRED: &#39;*use avraьt jŋheꜧt. kol at,&#39;
+  TRUE: &#39;*Pusen ņavramьt joŋheꜧt. Mikol at,&#39;
+WARNING:tensorflow:Method (on_train_batch_end) is slow compared to the batch update (0.302853). Check your callbacks.
+#00000700: loss=9.67660141 ler=0.59846268 dt=0.94566187s
+  PRED: &#39;*Uļakꞩi pionerьꜧ oli. au okţarat sart,&#39;
+  TRUE: &#39;*Uļakꞩi pionerьꜧ oli. Tau okţaвrat sart,&#39;
+Storing checkpoint to &#39;/Users/niko/github/ocr-tutorial/data/models/una-batch_1-00000800.ckpt&#39;
+#00000800: loss=6.00772715 ler=0.52365484 dt=0.86985343s
+  PRED: &#39;*pьriꞩiꜧ oli.,&#39;
+  TRUE: &#39;*pьriꞩiꜧ oli.,&#39;
+#00000900: loss=4.19488548 ler=0.47200692 dt=0.79613184s
+  PRED: &#39;*Hohsan ht-lajen, joŋhuŋkve tьꜧ-,&#39;
+  TRUE: &#39;*- Hohsan hot-lajen, joŋhuŋkve tьꜧ-,&#39;
+Storing checkpoint to &#39;/Users/niko/github/ocr-tutorial/data/models/una-batch_1-00001000.ckpt&#39;
+#00001000: loss=2.85367827 ler=0.42480623 dt=1.01420514s
+  PRED: &#39;*harteꜧt!,&#39;
+  TRUE: &#39;*harteꜧt!,&#39;
+#00001100: loss=2.35952931 ler=0.39628849 dt=1.01120380s
+  PRED: &#39;*ꞩopitel.,&#39;
+  TRUE: &#39;*ꞩopiteln.,&#39;
+Storing checkpoint to &#39;/Users/niko/github/ocr-tutorial/data/models/una-batch_1-00001200.ckpt&#39;
+#00001200: loss=1.79808081 ler=0.36326445 dt=0.93737005s
+  PRED: &#39;*jajen.,&#39;
+  TRUE: &#39;*jajen.,&#39;
+#00001300: loss=1.41390861 ler=0.33532103 dt=1.03504477s
+  PRED: &#39;*Ņavramьten Sano joŋhuŋkve untuves.,&#39;
+  TRUE: &#39;*Ņavramьten Sano joŋhuŋkve untuves.,&#39;
+Storing checkpoint to &#39;/Users/niko/github/ocr-tutorial/data/models/una-batch_1-00001400.ckpt&#39;
+#00001400: loss=1.39289295 ler=0.31136953 dt=1.04986981s
+  PRED: &#39;*Ņavramьt Uļakꞩi huntleꜧt.,&#39;
+  TRUE: &#39;*Ņavramьt Uļakꞩi huntleꜧt.,&#39;
+#00001500: loss=0.89948882 ler=0.29061156 dt=1.21357172s
+  PRED: &#39;*vos ols.,&#39;
+  TRUE: &#39;*vos ols.,&#39;
+Storing checkpoint to &#39;/Users/niko/github/ocr-tutorial/data/models/una-batch_1-00001600.ckpt&#39;
+#00001600: loss=0.80192822 ler=0.27423405 dt=1.04396018s
+  PRED: &#39;*Semel part hot-osꜧeln. Hasne rakt,&#39;
+  TRUE: &#39;*- Semel part hot-osꜧeln. Hasne rakt,&#39;
+#00001700: loss=0.76085947 ler=0.26146398 dt=1.28815659s
+  PRED: &#39;*tau nupьl lavs,aꜧmmьl jemteꜧьn. Ok-,&#39;
+  TRUE: &#39;*tau nupьl lavs, aꜧmьl jemteꜧьn. Ok-,&#39;</code></pre>
+</div>
+<div id="training-tesseract" class="section level2">
+<h2><span class="header-section-number">6.2</span> Training Tesseract</h2>
+<p>Training Tesseract can be a bit intimidating process. In last years many improvements have been done, and at the moment training is possible on both Linux and Mac. There is, additionally, <a href="https://github.com/tesseract-ocr/tesstrain">tessmake</a> project that very conveniently wraps the training process into a Makefile.</p>
+<pre><code>make training MODEL_NAME=komi-test GROUND_TRUTH_DIR=train/</code></pre>
+<p>If you want to change the parameters, play around with the Makefile.</p>
+<p>This gives a very good Tesseract model if you have enough data. The models, to be foundable for Tesseract, have to be in so called tessdata directory. This can be also specified when using Tesseract by specifying <code>--tessdata-dir</code>.</p>
+
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="ground-truth.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="htr.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/lunr.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": false,
+"facebook": true,
+"twitter": true,
+"google": false,
+"linkedin": false,
+"weibo": false,
+"instapaper": false,
+"vk": false,
+"all": ["facebook", "google", "twitter", "linkedin", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": null,
+"text": null
+},
+"history": {
+"link": null,
+"text": null
+},
+"download": ["ocr-tutorial.pdf", "ocr-tutorial.epub"],
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+</body>
+
+</html>
