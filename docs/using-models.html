@@ -24,7 +24,7 @@
 <meta name="author" content="Niko Partanen" />
 
 
-<meta name="date" content="2020-01-10" />
+<meta name="date" content="2020-01-11" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -69,7 +69,9 @@
 <li class="chapter" data-level="1" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i><b>1</b> Prerequisites</a></li>
 <li class="chapter" data-level="2" data-path="intro.html"><a href="intro.html"><i class="fa fa-check"></i><b>2</b> Introduction</a></li>
 <li class="chapter" data-level="3" data-path="tools.html"><a href="tools.html"><i class="fa fa-check"></i><b>3</b> Tools</a></li>
-<li class="chapter" data-level="4" data-path="layout.html"><a href="layout.html"><i class="fa fa-check"></i><b>4</b> Layout analysis</a></li>
+<li class="chapter" data-level="4" data-path="layout.html"><a href="layout.html"><i class="fa fa-check"></i><b>4</b> Layout analysis</a><ul>
+<li class="chapter" data-level="4.1" data-path="layout.html"><a href="layout.html#layout-xml"><i class="fa fa-check"></i><b>4.1</b> Layout XML</a></li>
+</ul></li>
 <li class="chapter" data-level="5" data-path="ground-truth.html"><a href="ground-truth.html"><i class="fa fa-check"></i><b>5</b> Ground Truth creation</a><ul>
 <li class="chapter" data-level="5.1" data-path="ground-truth.html"><a href="ground-truth.html#examples"><i class="fa fa-check"></i><b>5.1</b> Examples</a></li>
 <li class="chapter" data-level="5.2" data-path="ground-truth.html"><a href="ground-truth.html#summary"><i class="fa fa-check"></i><b>5.2</b> Summary</a></li>
@@ -130,45 +132,27 @@ for prediction in predictor.predict_raw(images = line_list, progress_bar=False):
 </code></pre>
 <p>More complete example could look like this:</p>
 <pre><code>
-def read_alto(alto_file, version = 2):
-    
-    tree = ET.parse(alto_file)
-    root = tree.getroot()
+from PIL import Image
+import numpy as np
+import matplotlib.pyplot as plt
+import statistics
+from pathlib import Path
+import xml.etree.cElementTree as ET
+import pandas as pd
+import matplotlib.patches as patches
+import time
 
-    xmlns = {&#39;alto&#39;: &#39;{http://www.loc.gov/standards/alto/ns-v&#39; + str(version) + &#39;#}&#39;}
-    
-    data = []
+from calamari_ocr.ocr import Predictor, create_dataset, DataSetType, DataSetMode
 
-    unit = root.find(&#39;.//{alto}MeasurementUnit&#39;.format(**xmlns)).text
-
-    max_height = root.find(&#39;.//{alto}PrintSpace&#39;.format(**xmlns)).get(&#39;HEIGHT&#39;)
-    max_width = root.find(&#39;.//{alto}PrintSpace&#39;.format(**xmlns)).get(&#39;WIDTH&#39;)
-
-    for block in root.iterfind(&#39;.//{alto}TextBlock&#39;.format(**xmlns)):
-        
-        block_id = block.get(&#39;ID&#39;)
-
-        for line in block.iterfind(&#39;.//{alto}TextLine&#39;.format(**xmlns)):
-
-            content = {}
-
-            content[&quot;block_id&quot;] = block_id
-            content[&quot;height&quot;] = line.get(&#39;HEIGHT&#39;)
-            content[&quot;width&quot;] = line.get(&#39;WIDTH&#39;)
-            content[&quot;top&quot;] = line.get(&#39;VPOS&#39;)
-            content[&quot;left&quot;] = line.get(&#39;HPOS&#39;)
-            content[&quot;unit&quot;] = unit
-            content[&quot;max_height&quot;] = max_height
-            content[&quot;max_width&quot;] = max_width
-
-            line_strings = []
-            for string in line.findall(&#39;./{alto}String&#39;.format(**xmlns)):
-                line_strings.append(string.get(&#39;CONTENT&#39;))
-            content[&quot;text&quot;] = &#39; &#39;.join(line_strings)
-            
-            data.append(content)
-        
-    return(data)
+def binarize_array(numpy_array, threshold=200):
+    &quot;&quot;&quot;Binarize a numpy array.&quot;&quot;&quot;
+    for i in range(len(numpy_array)):
+        for j in range(len(numpy_array[0])):
+            if numpy_array[i][j] &gt; threshold:
+                numpy_array[i][j] = 255
+            else:
+                numpy_array[i][j] = 0
+    return(numpy_array)
 
 def extract_line_array(pil_image, height, width, top, left):
 
@@ -186,9 +170,18 @@ def extract_line_array(pil_image, height, width, top, left):
 
 def predict_page(page_image, alto, predictor):
     
+    start = time.time()
+    print(&quot;Started to read alto&quot;)
+    
     alto_content = read_alto(alto)
     
+    print(&#39;Read alto, used:&#39;, time.time() - start)
+    print(&#39;Started to read image:&#39;)
+    
     pil_image = Image.open(page_image)
+    
+    print(&#39;Read image, used:&#39;, time.time() - start)
+    print(&#39;Starting to extract lines:&#39;)
     
     line_list = []
 
@@ -196,20 +189,185 @@ def predict_page(page_image, alto, predictor):
         extracted_line = extract_line_array(pil_image, line[&#39;height&#39;], line[&#39;width&#39;], line[&#39;top&#39;], line[&#39;left&#39;])
         line_list.append(extracted_line)
     
+    print(&#39;Extracted lines:&#39;, time.time() - start)
+    
     pred_list = []
     
-    for prediction in predictor.predict_raw(images = line_list, progress_bar=False):
+    print(&#39;Starting to predict:&#39;, time.time() - start)
+    
+    for prediction in predictor.predict_raw(images = line_list[0:40], progress_bar=False):
 
         pred_list.append(prediction)
         
-    return(pred_list)
+        print(prediction.sentence)
+
+    print(&#39;Finished predicting, used:&#39;, time.time() - start)
+    
+    return(pil_image, pred_list)</code></pre>
+<p>First we load the model.</p>
+<pre><code>
+predictor = Predictor(&#39;./data/models/una-batch_1-00002000.ckpt&#39;)
+
+Checkpoint version 2 is up-to-date.
+Model: &quot;model_1&quot;
+__________________________________________________________________________________________________
+Layer (type)                    Output Shape         Param #     Connected to                     
+==================================================================================================
+input_data (InputLayer)         [(None, None, 48, 1) 0                                            
+__________________________________________________________________________________________________
+conv2d_0 (Conv2D)               (None, None, 48, 40) 400         input_data[0][0]                 
+__________________________________________________________________________________________________
+pool2d_1 (MaxPooling2D)         (None, None, 24, 40) 0           conv2d_0[0][0]                   
+__________________________________________________________________________________________________
+conv2d_1 (Conv2D)               (None, None, 24, 60) 21660       pool2d_1[0][0]                   
+__________________________________________________________________________________________________
+pool2d_3 (MaxPooling2D)         (None, None, 12, 60) 0           conv2d_1[0][0]                   
+__________________________________________________________________________________________________
+reshape_1 (Reshape)             (None, None, 720)    0           pool2d_3[0][0]                   
+__________________________________________________________________________________________________
+bidirectional_1 (Bidirectional) (None, None, 400)    1473600     reshape_1[0][0]                  
+__________________________________________________________________________________________________
+input_sequence_length (InputLay [(None, 1)]          0                                            
+__________________________________________________________________________________________________
+dropout_1 (Dropout)             (None, None, 400)    0           bidirectional_1[0][0]            
+__________________________________________________________________________________________________
+tf_op_layer_floordiv_2 (TensorF [(None, 1)]          0           input_sequence_length[0][0]      
+__________________________________________________________________________________________________
+logits (Dense)                  (None, None, 42)     16842       dropout_1[0][0]                  
+__________________________________________________________________________________________________
+tf_op_layer_floordiv_3 (TensorF [(None, 1)]          0           tf_op_layer_floordiv_2[0][0]     
+__________________________________________________________________________________________________
+softmax (Softmax)               (None, None, 42)     0           logits[0][0]                     
+__________________________________________________________________________________________________
+input_data_params (InputLayer)  [(None, 1)]          0                                            
+__________________________________________________________________________________________________
+tf_op_layer_Cast_1 (TensorFlowO [(None, 1)]          0           tf_op_layer_floordiv_3[0][0]     
+==================================================================================================
+Total params: 1,512,502
+Trainable params: 1,512,502
+Non-trainable params: 0
 </code></pre>
-<p>Calamari returns very nicely list of confidences for each character. This info can be used, for example, to distinguish areas where the model is most confident, which seems to indicate correct script.</p>
+<p>Then we can try it:</p>
+<pre><code>result = predict_page(page_image = &#39;data/brigadir/Brigadir_koi_1932_04_03_0002.jpg&#39;, alto = &#39;data/brigadir/Brigadir_koi_1932_04_03_0002.xml&#39;, predictor = predictor)</code></pre>
+<p>The result is total garbage:</p>
+<pre><code>t
+jak-r n l npsn rprr oie unь isrr
+r -rvꞩ tr t pt
+ptprь ьl ьi irr
+Ņtьt pet
+vtt tttrꞩevti
+aeь ttt oitte ut
+ttttь ꞩre, r oioe
+vpaepv piorŋv opt
+ttt, tttttt
+p, ttrv - o-
+ttett , rrtt ьtt
+t v tpьtiv
+tьet ti.
+Ņļ ьe
+at ett tŋ
+ttj tt i ptь, -
+t oj ovj
+pŋ iti pt., oroeopvpot
+tt tꞩꞩt etiejpeьiti o
+o ii apr t r., oeeaьo
+rpь pꞩptt t
+rrь, peoe-ꞩe
+surt oꞩt
+ьt, ttipꞩꞩ tt
+tttieiь.
+Mo otttttьtt tar otiꞩ
+ьrrt M, tttuttt orrrьe t
+ateeoꞩr t ttu. hl,t
+tt ꞩꞩt ꞩtrь tt p tt t p
+pttetett .enьe.
+pr.
+p t -nrtt pьr
+tatiiit
+Ņpeeeьjŋ-
+att.Skttt t
+ꞩ-ьoeeerep.-
+ꞩeoi ka . M. oe-
+tttttettt pr a
+tiiiijь-ettaitii.</code></pre>
+<p>However, if we try it with the correct alphabet, we get something better. Let’s download the data package from <a href="https://fennougrica.kansalliskirjasto.fi/handle/10024/89663">here</a>, the book is in Kildin Saami and called <em>Kniga logkɘm guejka : vɘsmus pieļ vɘsmus egest opnuvmus</em>.</p>
+<div class="figure">
+<img src="images/sme_example.jpg" alt="Kildin example" />
+<p class="caption">Kildin example</p>
+</div>
+<pre><code>result = predict_page(page_image = &#39;data/sme_3-4_1934_DATA/sme_3-4_1934_0050.tif&#39;, 
+                      alto = &#39;data/sme_3-4_1934_DATA/sme_3-4_1934_0050.xml&#39;,
+                      predictor = predictor)
+
+Started to read alto
+Read alto, used: 0.021251916885375977
+Started to read image:
+Read image, used: 0.07696294784545898
+Starting to extract lines:
+Extracted lines: 2.9665989875793457
+Starting to predict: 2.9667038917541504
+Mate el part i
+kolaņ poata laukaolhan part lij. unp
+ꞩur part siꜧjoest sovet lij.
+oalnnant ꞩsur part lahoann part lij.
+uahoan partast oloktor laho. kai ahoe eit
+ajkest jejet ja joohtlajet. ļt lahoann part ej kuh-
+ken lij pua lahoann part. Tanpe oeuenev kap
+puoloa ja piena. Puas lahoann partast laho nunp
+olokhor-veternar.
+Ņialjant part sijlest lij kooperati. ьr taj
+part ev uko prta.
+aolta sijt lij kutur aaa. on sovet tueꞩt.
+aroht pule.
+kej pink. Uant kiee nier oel. annp li-
+jen, pa. annp aln juoole ꞩur vans trua.
+rat pajen suv.
+aohta parohot lij,---oiļke Uant aole,non
+parohool nnierast uine.
+
+Finished predicting, used: 4.725008964538574</code></pre>
+<p>Calamari returns very nicely list of confidences for each character.</p>
+<pre><code>for prediction in result[1]:
+    for position in prediction.prediction.positions:
+        print(position.chars[0], position.chars[0].probability)
+        
+char: &quot; &quot;
+label: 1
+probability: 0.9992870688438416
+ 0.9992870688438416
+char: &quot;M&quot;
+label: 9
+probability: 0.8293857574462891
+ 0.8293857574462891
+char: &quot;a&quot;
+label: 15
+probability: 0.992830216884613
+ 0.992830216884613
+char: &quot;t&quot;
+label: 29
+probability: 0.9831704497337341
+ 0.9831704497337341
+char: &quot;e&quot;
+label: 16
+probability: 0.8754977583885193
+ 0.8754977583885193
+char: &quot; &quot;
+label: 1
+probability: 0.9969095587730408
+ 0.9969095587730408
+char: &quot;e&quot;
+label: 16
+probability: 0.9955145716667175
+ 0.9955145716667175</code></pre>
+<p>This info can be used, for example, to distinguish areas where the model is most confident, which seems to indicate correct script.</p>
 <div class="figure">
 <img src="images/calamari_script_detector.jpg" alt="Calamari used in script detection" style="width:60.0%" />
 <p class="caption">Calamari used in script detection</p>
 </div>
 <p>The model used here was quite horribly bad, but still good enough for this.</p>
+<p>Let’s train a better model, we are using now an old ground truth data.</p>
+<pre><code>calamari-train --files mixed/*png --output_model_prefix una-batch_2- --output_dir models/ --checkpoint_frequency 200 </code></pre>
+<p>We can hopefully inspect the result during the workshop.</p>
 
 </div>
 </div>

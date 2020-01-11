@@ -24,7 +24,7 @@
 <meta name="author" content="Niko Partanen" />
 
 
-<meta name="date" content="2020-01-10" />
+<meta name="date" content="2020-01-11" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -69,7 +69,9 @@
 <li class="chapter" data-level="1" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i><b>1</b> Prerequisites</a></li>
 <li class="chapter" data-level="2" data-path="intro.html"><a href="intro.html"><i class="fa fa-check"></i><b>2</b> Introduction</a></li>
 <li class="chapter" data-level="3" data-path="tools.html"><a href="tools.html"><i class="fa fa-check"></i><b>3</b> Tools</a></li>
-<li class="chapter" data-level="4" data-path="layout.html"><a href="layout.html"><i class="fa fa-check"></i><b>4</b> Layout analysis</a></li>
+<li class="chapter" data-level="4" data-path="layout.html"><a href="layout.html"><i class="fa fa-check"></i><b>4</b> Layout analysis</a><ul>
+<li class="chapter" data-level="4.1" data-path="layout.html"><a href="layout.html#layout-xml"><i class="fa fa-check"></i><b>4.1</b> Layout XML</a></li>
+</ul></li>
 <li class="chapter" data-level="5" data-path="ground-truth.html"><a href="ground-truth.html"><i class="fa fa-check"></i><b>5</b> Ground Truth creation</a><ul>
 <li class="chapter" data-level="5.1" data-path="ground-truth.html"><a href="ground-truth.html#examples"><i class="fa fa-check"></i><b>5.1</b> Examples</a></li>
 <li class="chapter" data-level="5.2" data-path="ground-truth.html"><a href="ground-truth.html#summary"><i class="fa fa-check"></i><b>5.2</b> Summary</a></li>
@@ -113,11 +115,135 @@
 <p>When we use the OCR model, see section <a href="./doing-ocr">Doing OCR</a>, it is necessary that the lines we get from the line segmentation tool we use are similar to the lines we did the model training with. Thereby it is important to think about the whole pipeline before getting too far.</p>
 <p>In my experience the Tesseract’s layout analysis tool is very good, and often gives a very sensible result. Also Transkribus has some excellent layout detection capabilities. So running the layout detection in these programs, and extracting the line bounding boxes from the XML returned is a good option.</p>
 <p>Layout detection works on many levels, so different elements we can retrieve are text areas, figure areas, line bounding boxes etc.</p>
-<div class="figure">
-<img src="images/calamari_script_detector.jpg" alt="Example from Russian - Permian Komi newspaper’s layout" style="width:60.0%" />
-<p class="caption">Example from Russian - Permian Komi newspaper’s layout</p>
-</div>
+<div id="layout-xml" class="section level2">
+<h2><span class="header-section-number">4.1</span> Layout XML</h2>
+<p>It is common that we get some sort of OCR in XML format. Alto, hocr and Page are all commonly used. <strong>It is extremely common that different OCR software produce slightly different variations of these standards.</strong></p>
+<p>It may be that OCR quality is not good, but the layout detection is alright. So instead of starting to do that again, one can just extract the area information from existing XML. In principle the process is quite similar even when we first do layout analysis ourselves, as the resulting information looks the same.</p>
+<p>As far as I know, layout analysis is usually not script specific, so it is good idea to use i.e. Tesseract’s basic English model and just disregard the OCR result.</p>
+<p>So let’s say we have following files from Fenno-Ugrica collection.</p>
+<pre><code>data/brigadir/Brigadir_koi_1932_04_03_0002.jpg
+data/brigadir/Brigadir_koi_1932_04_03_0002.xml</code></pre>
+<p>We can define a function that reads Alto. I often encounter Alto versions 2 and 3, so I’ve taken that into account.</p>
+<p>Sometimes the units are pixels, sometimes millimeters. That can be read from the file too and converted accordingly.</p>
+<pre><code>def read_alto(alto_file, version = 2):
+    
+    tree = ET.parse(alto_file)
+    root = tree.getroot()
 
+    xmlns = {&#39;alto&#39;: &#39;{http://www.loc.gov/standards/alto/ns-v&#39; + str(version) + &#39;#}&#39;}
+    
+    data = []
+
+    unit = root.find(&#39;.//{alto}MeasurementUnit&#39;.format(**xmlns)).text
+
+    max_height = root.find(&#39;.//{alto}PrintSpace&#39;.format(**xmlns)).get(&#39;HEIGHT&#39;)
+    max_width = root.find(&#39;.//{alto}PrintSpace&#39;.format(**xmlns)).get(&#39;WIDTH&#39;)
+
+    for block in root.iterfind(&#39;.//{alto}TextBlock&#39;.format(**xmlns)):
+        
+        block_id = block.get(&#39;ID&#39;)
+
+        for line in block.iterfind(&#39;.//{alto}TextLine&#39;.format(**xmlns)):
+
+            content = {}
+
+            content[&quot;block_id&quot;] = block_id
+            content[&quot;height&quot;] = line.get(&#39;HEIGHT&#39;)
+            content[&quot;width&quot;] = line.get(&#39;WIDTH&#39;)
+            content[&quot;top&quot;] = line.get(&#39;VPOS&#39;)
+            content[&quot;left&quot;] = line.get(&#39;HPOS&#39;)
+            content[&quot;unit&quot;] = unit
+            content[&quot;max_height&quot;] = max_height
+            content[&quot;max_width&quot;] = max_width
+
+            line_strings = []
+            for string in line.findall(&#39;./{alto}String&#39;.format(**xmlns)):
+                line_strings.append(string.get(&#39;CONTENT&#39;))
+            content[&quot;text&quot;] = &#39; &#39;.join(line_strings)
+            
+            data.append(content)
+        
+    return(data)</code></pre>
+<pre><code>read_alto(&#39;data/brigadir/Brigadir_koi_1932_04_03_0002.xml&#39;)</code></pre>
+<p>We get something like this.</p>
+<pre><code>[{&#39;block_id&#39;: &#39;BlockId-E8E89E60-4605-4160-9524-98483329D387-&#39;,
+  &#39;height&#39;: &#39;132&#39;,
+  &#39;width&#39;: &#39;4060&#39;,
+  &#39;top&#39;: &#39;346&#39;,
+  &#39;left&#39;: &#39;762&#39;,
+  &#39;unit&#39;: &#39;pixel&#39;,
+  &#39;max_height&#39;: &#39;6910&#39;,
+  &#39;max_width&#39;: &#39;5412&#39;,
+  &#39;text&#39;: &#39;СТАРИКОВСКИЕ КОМСОМОЛЬЦЫ ПОКАЗЫВАЮТ ОБРАЗЦЫ БОЛЬШЕВИСТСКИХ РАБОТ В ЛЕСИ&#39;},
+ {&#39;block_id&#39;: &#39;BlockId-E8E89E60-4605-4160-9524-98483329D387-&#39;,
+  &#39;height&#39;: &#39;116&#39;,
+  &#39;width&#39;: &#39;3306&#39;,
+  &#39;top&#39;: &#39;493&#39;,
+  &#39;left&#39;: &#39;1153&#39;,
+  &#39;unit&#39;: &#39;pixel&#39;,
+  &#39;max_height&#39;: &#39;6910&#39;,
+  &#39;max_width&#39;: &#39;5412&#39;,
+  &#39;text&#39;: &#39;С 1-го по 15 апреля проводится обмен комсомольских билетов&#39;},
+ {&#39;block_id&#39;: &#39;BlockId-E8E89E60-4605-4160-9524-98483329D387-&#39;,
+  &#39;height&#39;: &#39;136&#39;,
+  &#39;width&#39;: &#39;4056&#39;,
+  &#39;top&#39;: &#39;642&#39;,
+  &#39;left&#39;: &#39;766&#39;,
+  &#39;unit&#39;: &#39;pixel&#39;,
+  &#39;max_height&#39;: &#39;6910&#39;,
+  &#39;max_width&#39;: &#39;5412&#39;,
+  &#39;text&#39;: &#39;Комсомол т вои задача л-ззготогну закончить к сроку!&#39;},
+ {&#39;block_id&#39;: &#39;BlockId-E8E89E60-4605-4160-9524-98483329D387-&#39;,
+  &#39;height&#39;: &#39;100&#39;,
+  &#39;width&#39;: &#39;1628&#39;,
+  &#39;top&#39;: &#39;841&#39;,
+  &#39;left&#39;: &#39;761&#39;,
+  &#39;unit&#39;: &#39;pixel&#39;,
+  &#39;max_height&#39;: &#39;6910&#39;,
+  &#39;max_width&#39;: &#39;5412&#39;,
+  &#39;text&#39;: &#39;Драться за новый комсомольский б«яет |&#39;},</code></pre>
+<pre><code>def plot_fennougrica_page(pil_image, alto_df):
+
+    im = np.array(pil_image)
+    fig,ax = plt.subplots(1)
+    ax.imshow(im)
+
+    boxes = []
+
+    for left, top, width, height in zip(alto_df.left.to_list(), alto_df.top.to_list(), alto_df.width.to_list(), alto_df.height.to_list()):
+        boxes.append(patches.Rectangle((int(left), int(top)), int(width), int(height), linewidth = 1, edgecolor = &#39;red&#39;, facecolor = &#39;None&#39;))
+
+    for line in boxes:
+        ax.add_patch(line)
+
+    plt.show()</code></pre>
+<pre><code>plot_fennougrica_page(pil_image, alto_df)</code></pre>
+<div class="figure">
+<img src="images/brigadir_lines.jpg" alt="Example from Brigadir newspaper" />
+<p class="caption">Example from Brigadir newspaper</p>
+</div>
+<p>In principle we can try to repeat that with Tesseract.</p>
+<pre><code>! tesseract data/brigadir/Brigadir_koi_1932_04_03_0002.jpg data/brigadir/Brigadir_koi_1932_04_03_0002-tesseract -l eng alto</code></pre>
+<pre><code>
+alto_content_tesseract = read_alto(&#39;data/brigadir/Brigadir_koi_1932_04_03_0002-tesseract.xml&#39;)
+alto_df_tesseract = pd.DataFrame.from_dict(alto_content)</code></pre>
+<p>However, there is some difference between Alto files here, and it doesn’t work without modifications.s</p>
+<pre><code>---------------------------------------------------------------------------
+AttributeError                            Traceback (most recent call last)
+&lt;ipython-input-43-030c745496dc&gt; in &lt;module&gt;
+----&gt; 1 alto_content_tesseract = read_alto(&#39;data/brigadir/Brigadir_koi_1932_04_03_0002-tesseract.xml&#39;)
+      2 alto_df_tesseract = pd.DataFrame.from_dict(alto_content)
+
+&lt;ipython-input-22-a5fa245950ec&gt; in read_alto(alto_file, version)
+      8     data = []
+      9 
+---&gt; 10     unit = root.find(&#39;.//{alto}MeasurementUnit&#39;.format(**xmlns)).text
+     11 
+     12     max_height = root.find(&#39;.//{alto}PrintSpace&#39;.format(**xmlns)).get(&#39;HEIGHT&#39;)
+
+AttributeError: &#39;NoneType&#39; object has no attribute &#39;text&#39;</code></pre>
+
+</div>
 </div>
             </section>
 

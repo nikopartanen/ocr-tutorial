@@ -84,7 +84,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{2020-01-10}
+    \date{2020-01-11}
 
 \usepackage{booktabs}
 
@@ -103,6 +103,8 @@ This tutorial is about current OCR technologies, and Niko Partanen's own practic
 All examples are taken from the National Library of Finland's \href{https://fennougrica.kansalliskirjasto.fi/}{Fenno-Ugrica collection}.
 
 This workshop assumes that the participants are comfortable with installing software from the source, and are used to working on command line. All examples are supposed to be complete and repeatable, but this is very much ongoing work.
+
+Since the materials were created very fast, there is some lack of logic in how the tutorial proceeds and examples have been chosen.
 
 \hypertarget{intro}{%
 \chapter{Introduction}\label{intro}}
@@ -161,11 +163,171 @@ In my experience the Tesseract's layout analysis tool is very good, and often gi
 
 Layout detection works on many levels, so different elements we can retrieve are text areas, figure areas, line bounding boxes etc.
 
+\hypertarget{layout-xml}{%
+\section{Layout XML}\label{layout-xml}}
+
+It is common that we get some sort of OCR in XML format. Alto, hocr and Page are all commonly used. \textbf{It is extremely common that different OCR software produce slightly different variations of these standards.}
+
+It may be that OCR quality is not good, but the layout detection is alright. So instead of starting to do that again, one can just extract the area information from existing XML. In principle the process is quite similar even when we first do layout analysis ourselves, as the resulting information looks the same.
+
+As far as I know, layout analysis is usually not script specific, so it is good idea to use i.e.~Tesseract's basic English model and just disregard the OCR result.
+
+So let's say we have following files from Fenno-Ugrica collection.
+
+\begin{verbatim}
+data/brigadir/Brigadir_koi_1932_04_03_0002.jpg
+data/brigadir/Brigadir_koi_1932_04_03_0002.xml
+\end{verbatim}
+
+We can define a function that reads Alto. I often encounter Alto versions 2 and 3, so I've taken that into account.
+
+Sometimes the units are pixels, sometimes millimeters. That can be read from the file too and converted accordingly.
+
+\begin{verbatim}
+def read_alto(alto_file, version = 2):
+    
+    tree = ET.parse(alto_file)
+    root = tree.getroot()
+
+    xmlns = {'alto': '{http://www.loc.gov/standards/alto/ns-v' + str(version) + '#}'}
+    
+    data = []
+
+    unit = root.find('.//{alto}MeasurementUnit'.format(**xmlns)).text
+
+    max_height = root.find('.//{alto}PrintSpace'.format(**xmlns)).get('HEIGHT')
+    max_width = root.find('.//{alto}PrintSpace'.format(**xmlns)).get('WIDTH')
+
+    for block in root.iterfind('.//{alto}TextBlock'.format(**xmlns)):
+        
+        block_id = block.get('ID')
+
+        for line in block.iterfind('.//{alto}TextLine'.format(**xmlns)):
+
+            content = {}
+
+            content["block_id"] = block_id
+            content["height"] = line.get('HEIGHT')
+            content["width"] = line.get('WIDTH')
+            content["top"] = line.get('VPOS')
+            content["left"] = line.get('HPOS')
+            content["unit"] = unit
+            content["max_height"] = max_height
+            content["max_width"] = max_width
+
+            line_strings = []
+            for string in line.findall('./{alto}String'.format(**xmlns)):
+                line_strings.append(string.get('CONTENT'))
+            content["text"] = ' '.join(line_strings)
+            
+            data.append(content)
+        
+    return(data)
+\end{verbatim}
+
+\begin{verbatim}
+read_alto('data/brigadir/Brigadir_koi_1932_04_03_0002.xml')
+\end{verbatim}
+
+We get something like this.
+
+\begin{verbatim}
+[{'block_id': 'BlockId-E8E89E60-4605-4160-9524-98483329D387-',
+  'height': '132',
+  'width': '4060',
+  'top': '346',
+  'left': '762',
+  'unit': 'pixel',
+  'max_height': '6910',
+  'max_width': '5412',
+  'text': 'СТАРИКОВСКИЕ КОМСОМОЛЬЦЫ ПОКАЗЫВАЮТ ОБРАЗЦЫ БОЛЬШЕВИСТСКИХ РАБОТ В ЛЕСИ'},
+ {'block_id': 'BlockId-E8E89E60-4605-4160-9524-98483329D387-',
+  'height': '116',
+  'width': '3306',
+  'top': '493',
+  'left': '1153',
+  'unit': 'pixel',
+  'max_height': '6910',
+  'max_width': '5412',
+  'text': 'С 1-го по 15 апреля проводится обмен комсомольских билетов'},
+ {'block_id': 'BlockId-E8E89E60-4605-4160-9524-98483329D387-',
+  'height': '136',
+  'width': '4056',
+  'top': '642',
+  'left': '766',
+  'unit': 'pixel',
+  'max_height': '6910',
+  'max_width': '5412',
+  'text': 'Комсомол т вои задача л-ззготогну закончить к сроку!'},
+ {'block_id': 'BlockId-E8E89E60-4605-4160-9524-98483329D387-',
+  'height': '100',
+  'width': '1628',
+  'top': '841',
+  'left': '761',
+  'unit': 'pixel',
+  'max_height': '6910',
+  'max_width': '5412',
+  'text': 'Драться за новый комсомольский б«яет |'},
+\end{verbatim}
+
+\begin{verbatim}
+def plot_fennougrica_page(pil_image, alto_df):
+
+    im = np.array(pil_image)
+    fig,ax = plt.subplots(1)
+    ax.imshow(im)
+
+    boxes = []
+
+    for left, top, width, height in zip(alto_df.left.to_list(), alto_df.top.to_list(), alto_df.width.to_list(), alto_df.height.to_list()):
+        boxes.append(patches.Rectangle((int(left), int(top)), int(width), int(height), linewidth = 1, edgecolor = 'red', facecolor = 'None'))
+
+    for line in boxes:
+        ax.add_patch(line)
+
+    plt.show()
+\end{verbatim}
+
+\begin{verbatim}
+plot_fennougrica_page(pil_image, alto_df)
+\end{verbatim}
+
 \begin{figure}
 \centering
-\includegraphics[width=0.6\textwidth,height=\textheight]{images/calamari_script_detector.jpg}
-\caption{Example from Russian - Permian Komi newspaper's layout}
+\includegraphics{images/brigadir_lines.jpg}
+\caption{Example from Brigadir newspaper}
 \end{figure}
+
+In principle we can try to repeat that with Tesseract.
+
+\begin{verbatim}
+! tesseract data/brigadir/Brigadir_koi_1932_04_03_0002.jpg data/brigadir/Brigadir_koi_1932_04_03_0002-tesseract -l eng alto
+\end{verbatim}
+
+\begin{verbatim}
+
+alto_content_tesseract = read_alto('data/brigadir/Brigadir_koi_1932_04_03_0002-tesseract.xml')
+alto_df_tesseract = pd.DataFrame.from_dict(alto_content)
+\end{verbatim}
+
+However, there is some difference between Alto files here, and it doesn't work without modifications.s
+
+\begin{verbatim}
+---------------------------------------------------------------------------
+AttributeError                            Traceback (most recent call last)
+<ipython-input-43-030c745496dc> in <module>
+----> 1 alto_content_tesseract = read_alto('data/brigadir/Brigadir_koi_1932_04_03_0002-tesseract.xml')
+      2 alto_df_tesseract = pd.DataFrame.from_dict(alto_content)
+
+<ipython-input-22-a5fa245950ec> in read_alto(alto_file, version)
+      8     data = []
+      9 
+---> 10     unit = root.find('.//{alto}MeasurementUnit'.format(**xmlns)).text
+     11 
+     12     max_height = root.find('.//{alto}PrintSpace'.format(**xmlns)).get('HEIGHT')
+
+AttributeError: 'NoneType' object has no attribute 'text'
+\end{verbatim}
 
 \hypertarget{ground-truth}{%
 \chapter{Ground Truth creation}\label{ground-truth}}
@@ -336,7 +498,7 @@ There are few things we usually should keep in mind while training the model:
   \item
     Same if you want to release something more publicly
   \item
-    \textbf{Hot take:} With small amount of data nothing significant happens after first few hours. If you are in Ground Truth creation loop, iterating the new models fast is a good idea.
+    My opinion: With small amount of data nothing significant happens after first few hours. If you are in Ground Truth creation loop, iterating the new models fast is a good idea.
   \end{itemize}
 \end{itemize}
 
@@ -611,45 +773,27 @@ More complete example could look like this:
 
 \begin{verbatim}
 
-def read_alto(alto_file, version = 2):
-    
-    tree = ET.parse(alto_file)
-    root = tree.getroot()
+from PIL import Image
+import numpy as np
+import matplotlib.pyplot as plt
+import statistics
+from pathlib import Path
+import xml.etree.cElementTree as ET
+import pandas as pd
+import matplotlib.patches as patches
+import time
 
-    xmlns = {'alto': '{http://www.loc.gov/standards/alto/ns-v' + str(version) + '#}'}
-    
-    data = []
+from calamari_ocr.ocr import Predictor, create_dataset, DataSetType, DataSetMode
 
-    unit = root.find('.//{alto}MeasurementUnit'.format(**xmlns)).text
-
-    max_height = root.find('.//{alto}PrintSpace'.format(**xmlns)).get('HEIGHT')
-    max_width = root.find('.//{alto}PrintSpace'.format(**xmlns)).get('WIDTH')
-
-    for block in root.iterfind('.//{alto}TextBlock'.format(**xmlns)):
-        
-        block_id = block.get('ID')
-
-        for line in block.iterfind('.//{alto}TextLine'.format(**xmlns)):
-
-            content = {}
-
-            content["block_id"] = block_id
-            content["height"] = line.get('HEIGHT')
-            content["width"] = line.get('WIDTH')
-            content["top"] = line.get('VPOS')
-            content["left"] = line.get('HPOS')
-            content["unit"] = unit
-            content["max_height"] = max_height
-            content["max_width"] = max_width
-
-            line_strings = []
-            for string in line.findall('./{alto}String'.format(**xmlns)):
-                line_strings.append(string.get('CONTENT'))
-            content["text"] = ' '.join(line_strings)
-            
-            data.append(content)
-        
-    return(data)
+def binarize_array(numpy_array, threshold=200):
+    """Binarize a numpy array."""
+    for i in range(len(numpy_array)):
+        for j in range(len(numpy_array[0])):
+            if numpy_array[i][j] > threshold:
+                numpy_array[i][j] = 255
+            else:
+                numpy_array[i][j] = 0
+    return(numpy_array)
 
 def extract_line_array(pil_image, height, width, top, left):
 
@@ -667,9 +811,18 @@ def extract_line_array(pil_image, height, width, top, left):
 
 def predict_page(page_image, alto, predictor):
     
+    start = time.time()
+    print("Started to read alto")
+    
     alto_content = read_alto(alto)
     
+    print('Read alto, used:', time.time() - start)
+    print('Started to read image:')
+    
     pil_image = Image.open(page_image)
+    
+    print('Read image, used:', time.time() - start)
+    print('Starting to extract lines:')
     
     line_list = []
 
@@ -677,16 +830,200 @@ def predict_page(page_image, alto, predictor):
         extracted_line = extract_line_array(pil_image, line['height'], line['width'], line['top'], line['left'])
         line_list.append(extracted_line)
     
+    print('Extracted lines:', time.time() - start)
+    
     pred_list = []
     
-    for prediction in predictor.predict_raw(images = line_list, progress_bar=False):
+    print('Starting to predict:', time.time() - start)
+    
+    for prediction in predictor.predict_raw(images = line_list[0:40], progress_bar=False):
 
         pred_list.append(prediction)
         
-    return(pred_list)
+        print(prediction.sentence)
+
+    print('Finished predicting, used:', time.time() - start)
+    
+    return(pil_image, pred_list)
 \end{verbatim}
 
-Calamari returns very nicely list of confidences for each character. This info can be used, for example, to distinguish areas where the model is most confident, which seems to indicate correct script.
+First we load the model.
+
+\begin{verbatim}
+
+predictor = Predictor('./data/models/una-batch_1-00002000.ckpt')
+
+Checkpoint version 2 is up-to-date.
+Model: "model_1"
+__________________________________________________________________________________________________
+Layer (type)                    Output Shape         Param #     Connected to                     
+==================================================================================================
+input_data (InputLayer)         [(None, None, 48, 1) 0                                            
+__________________________________________________________________________________________________
+conv2d_0 (Conv2D)               (None, None, 48, 40) 400         input_data[0][0]                 
+__________________________________________________________________________________________________
+pool2d_1 (MaxPooling2D)         (None, None, 24, 40) 0           conv2d_0[0][0]                   
+__________________________________________________________________________________________________
+conv2d_1 (Conv2D)               (None, None, 24, 60) 21660       pool2d_1[0][0]                   
+__________________________________________________________________________________________________
+pool2d_3 (MaxPooling2D)         (None, None, 12, 60) 0           conv2d_1[0][0]                   
+__________________________________________________________________________________________________
+reshape_1 (Reshape)             (None, None, 720)    0           pool2d_3[0][0]                   
+__________________________________________________________________________________________________
+bidirectional_1 (Bidirectional) (None, None, 400)    1473600     reshape_1[0][0]                  
+__________________________________________________________________________________________________
+input_sequence_length (InputLay [(None, 1)]          0                                            
+__________________________________________________________________________________________________
+dropout_1 (Dropout)             (None, None, 400)    0           bidirectional_1[0][0]            
+__________________________________________________________________________________________________
+tf_op_layer_floordiv_2 (TensorF [(None, 1)]          0           input_sequence_length[0][0]      
+__________________________________________________________________________________________________
+logits (Dense)                  (None, None, 42)     16842       dropout_1[0][0]                  
+__________________________________________________________________________________________________
+tf_op_layer_floordiv_3 (TensorF [(None, 1)]          0           tf_op_layer_floordiv_2[0][0]     
+__________________________________________________________________________________________________
+softmax (Softmax)               (None, None, 42)     0           logits[0][0]                     
+__________________________________________________________________________________________________
+input_data_params (InputLayer)  [(None, 1)]          0                                            
+__________________________________________________________________________________________________
+tf_op_layer_Cast_1 (TensorFlowO [(None, 1)]          0           tf_op_layer_floordiv_3[0][0]     
+==================================================================================================
+Total params: 1,512,502
+Trainable params: 1,512,502
+Non-trainable params: 0
+\end{verbatim}
+
+Then we can try it:
+
+\begin{verbatim}
+result = predict_page(page_image = 'data/brigadir/Brigadir_koi_1932_04_03_0002.jpg', alto = 'data/brigadir/Brigadir_koi_1932_04_03_0002.xml', predictor = predictor)
+\end{verbatim}
+
+The result is total garbage:
+
+\begin{verbatim}
+t
+jak-r n l npsn rprr oie unь isrr
+r -rvꞩ tr t pt
+ptprь ьl ьi irr
+Ņtьt pet
+vtt tttrꞩevti
+aeь ttt oitte ut
+ttttь ꞩre, r oioe
+vpaepv piorŋv opt
+ttt, tttttt
+p, ttrv - o-
+ttett , rrtt ьtt
+t v tpьtiv
+tьet ti.
+Ņļ ьe
+at ett tŋ
+ttj tt i ptь, -
+t oj ovj
+pŋ iti pt., oroeopvpot
+tt tꞩꞩt etiejpeьiti o
+o ii apr t r., oeeaьo
+rpь pꞩptt t
+rrь, peoe-ꞩe
+surt oꞩt
+ьt, ttipꞩꞩ tt
+tttieiь.
+Mo otttttьtt tar otiꞩ
+ьrrt M, tttuttt orrrьe t
+ateeoꞩr t ttu. hl,t
+tt ꞩꞩt ꞩtrь tt p tt t p
+pttetett .enьe.
+pr.
+p t -nrtt pьr
+tatiiit
+Ņpeeeьjŋ-
+att.Skttt t
+ꞩ-ьoeeerep.-
+ꞩeoi ka . M. oe-
+tttttettt pr a
+tiiiijь-ettaitii.
+\end{verbatim}
+
+However, if we try it with the correct alphabet, we get something better. Let's download the data package from \href{https://fennougrica.kansalliskirjasto.fi/handle/10024/89663}{here}, the book is in Kildin Saami and called \emph{Kniga logkɘm guejka : vɘsmus pieļ vɘsmus egest opnuvmus}.
+
+\begin{figure}
+\centering
+\includegraphics{./images/sme_example.jpg}
+\caption{Kildin example}
+\end{figure}
+
+\begin{verbatim}
+result = predict_page(page_image = 'data/sme_3-4_1934_DATA/sme_3-4_1934_0050.tif', 
+                      alto = 'data/sme_3-4_1934_DATA/sme_3-4_1934_0050.xml',
+                      predictor = predictor)
+
+Started to read alto
+Read alto, used: 0.021251916885375977
+Started to read image:
+Read image, used: 0.07696294784545898
+Starting to extract lines:
+Extracted lines: 2.9665989875793457
+Starting to predict: 2.9667038917541504
+Mate el part i
+kolaņ poata laukaolhan part lij. unp
+ꞩur part siꜧjoest sovet lij.
+oalnnant ꞩsur part lahoann part lij.
+uahoan partast oloktor laho. kai ahoe eit
+ajkest jejet ja joohtlajet. ļt lahoann part ej kuh-
+ken lij pua lahoann part. Tanpe oeuenev kap
+puoloa ja piena. Puas lahoann partast laho nunp
+olokhor-veternar.
+Ņialjant part sijlest lij kooperati. ьr taj
+part ev uko prta.
+aolta sijt lij kutur aaa. on sovet tueꞩt.
+aroht pule.
+kej pink. Uant kiee nier oel. annp li-
+jen, pa. annp aln juoole ꞩur vans trua.
+rat pajen suv.
+aohta parohot lij,---oiļke Uant aole,non
+parohool nnierast uine.
+
+Finished predicting, used: 4.725008964538574
+\end{verbatim}
+
+Calamari returns very nicely list of confidences for each character.
+
+\begin{verbatim}
+for prediction in result[1]:
+    for position in prediction.prediction.positions:
+        print(position.chars[0], position.chars[0].probability)
+        
+char: " "
+label: 1
+probability: 0.9992870688438416
+ 0.9992870688438416
+char: "M"
+label: 9
+probability: 0.8293857574462891
+ 0.8293857574462891
+char: "a"
+label: 15
+probability: 0.992830216884613
+ 0.992830216884613
+char: "t"
+label: 29
+probability: 0.9831704497337341
+ 0.9831704497337341
+char: "e"
+label: 16
+probability: 0.8754977583885193
+ 0.8754977583885193
+char: " "
+label: 1
+probability: 0.9969095587730408
+ 0.9969095587730408
+char: "e"
+label: 16
+probability: 0.9955145716667175
+ 0.9955145716667175
+\end{verbatim}
+
+This info can be used, for example, to distinguish areas where the model is most confident, which seems to indicate correct script.
 
 \begin{figure}
 \centering
@@ -695,6 +1032,14 @@ Calamari returns very nicely list of confidences for each character. This info c
 \end{figure}
 
 The model used here was quite horribly bad, but still good enough for this.
+
+Let's train a better model, we are using now an old ground truth data.
+
+\begin{verbatim}
+calamari-train --files mixed/*png --output_model_prefix una-batch_2- --output_dir models/ --checkpoint_frequency 200 
+\end{verbatim}
+
+We can hopefully inspect the result during the workshop.
 
 \bibliography{book.bib,packages.bib,bibtex/FRibliography.bib}
 
